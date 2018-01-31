@@ -3,6 +3,7 @@
     namespace AppBundle\Controller;
 
     use AppBundle\Form\UserType;
+    use AppBundle\Service\FileUploader;
     use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
     use Symfony\Bundle\FrameworkBundle\Controller\Controller;
     use FOS\RestBundle\Controller\Annotations as Rest;
@@ -29,18 +30,26 @@
 
         /**
          * @Rest\Post("/user/")
+         *
          */
-        public function postAction(Request $request)
+        public function postAction(Request $request, FileUploader $fileUploader)
         {
-            $user = new User;
-
-            $form = $this->createForm(UserType::class, $user);
+            $data = new User;
+            $form = $this->createForm(UserType::class, $data);
             $form->submit($request->request->all());
+            $data->setPicture($request->files->get('picture'));
 
             if ($form->isValid()) {
                 $em = $this->getDoctrine()->getManager();
-                $em->persist($user);
+                $file = $data->getPicture();
+                $fileName = $fileUploader->upload($file);
+                $data->setPicture($fileName);
+
+                $em->persist($data);
                 $em->flush();
+
+                return $data;
+
             } else {
                 return $form;
             }
@@ -67,6 +76,7 @@
             $em = $this->getDoctrine()->getManager();
             $user = $em->getRepository('AppBundle:User')->findOneById($request->get('id'));
 
+
             if (empty($user)) {
                 return new JsonResponse(['message' => 'User not found'], Response::HTTP_NOT_FOUND);
             }
@@ -81,6 +91,31 @@
             } else {
                 return $form;
             }
+        }
+
+        /**
+         * Set score
+         *
+         * @Rest\Put("/user/{id_user}/vote/{id_target}")
+         */
+        public function voteAction($id_user, $id_target, Request $request)
+        {
+            $em = $this->getDoctrine()->getManager();
+            $user = $em->getRepository('AppBundle:User')->findOneById($id_user);
+            $targetUser = $em->getRepository('AppBundle:User')->findOneById($id_target);
+            /*$user->setScore($user->getScore()+1);*/
+
+
+            if ($user->getVoted(true)) {
+                return 'Vous avez déjà voté !';
+
+            } elseif ($targetUser->setScore($targetUser->getScore() + 1) && ($user->setVoted(true))){
+
+                $em->flush();
+                return $targetUser->getScore();
+            }
+
+
         }
 
         /**

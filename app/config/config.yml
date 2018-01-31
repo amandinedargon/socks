@@ -7,6 +7,7 @@ imports:
 # https://symfony.com/doc/current/best_practices/configuration.html#application-related-configuration
 parameters:
     locale: en
+    pictures_directory: '%kernel.project_dir%/web/uploads'
 
 framework:
     #esi: ~
@@ -82,7 +83,7 @@ fos_rest:
     body_listener: true
     format_listener:
         rules:
-            - { path: '^/', priorities: ['json'], fallback_format: json, prefer_extension: false }
+            - { path: '^/', priorities: ['json', 'html'], fallback_format: json, prefer_extension: false }
     param_fetcher_listener: true
     view:
         view_response_listener: 'force'

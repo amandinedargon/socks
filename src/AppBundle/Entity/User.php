@@ -63,13 +63,12 @@ class User
      */
     private $score;
 
+
     public function __construct()
     {
         $this->score = 0;
         $this->voted = false;
-
     }
-
 
     /**
      * Get id
